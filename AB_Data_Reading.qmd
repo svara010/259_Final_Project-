@@ -1,0 +1,95 @@
+---
+title: "AB_Data_Reading"
+format: html
+editor: visual
+---
+
+```{r}
+
+library(R.matlab)   
+library(dplyr)      
+library(writexl)    
+
+
+mat_file <- "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/Sham/58/Record_S58_ID_sn1_b1.mat"
+excel_file <- "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/Sham/58/b1"
+
+
+data <- readMat(mat_file)
+
+Datastruct <- data$Datastruct 
+
+# Converting fields to vectors (MATLAB structures are list-like in R)
+df <- tibble(
+  block = unlist(Datastruct$block),
+  lag = unlist(Datastruct$Lag),
+  T2T1Corr = unlist(Datastruct$T2T1Corr),
+  T1Corr = unlist(Datastruct$T1Corr),
+  T2Corr = unlist(Datastruct$T2Corr)
+)
+
+
+write_xlsx(df, excel_file)
+
+print(paste("Data successfully saved to:", excel_file))
+
+```
+
+```{r}
+
+library(R.matlab)   
+library(dplyr)      
+library(readr)      
+library(writexl)    
+library(stringr)    
+
+
+data_dir <- "/Users/saherehvarastegan/Downloads/"  
+output_file <- "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/all_participants_data.xlsx"
+
+
+mat_files <- list.files(data_dir, pattern = "\\.mat$", full.names = TRUE)
+
+all_data <- list()
+
+# Loopping through all participants' .mat files
+for (file in mat_files) {
+  
+  # the .mat file
+  data <- readMat(file)
+  
+  # participant ID from the filename 
+  participant_id <- str_extract(basename(file), "S\\d+")
+  
+  
+  Datastruct <- data$Datastruct
+  
+  # block information dynamically
+  num_blocks <- length(Datastruct$block)  # Should be 3 blocks per participant
+
+  for (b in 1:num_blocks) {
+
+    df <- tibble(
+      participant_id = participant_id,
+      block = unlist(Datastruct$block[b]),
+      lag = unlist(Datastruct$Lag[b]),
+      T2T1Corr = unlist(Datastruct$T2T1Corr[b]),
+      T1Corr = unlist(Datastruct$T1Corr[b]),
+      T2Corr = unlist(Datastruct$T2Corr[b])
+    )
+    
+    all_data <- append(all_data, list(df))
+  }
+}
+
+# Combining all data into one dataframe
+final_df <- bind_rows(all_data)
+
+write_xlsx(final_df, output_file)
+
+write_csv(final_df, str_replace(output_file, ".xlsx", ".csv"))
+
+print(paste("All participant data saved to:", output_file))
+
+```
+
