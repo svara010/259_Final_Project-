@@ -93,3 +93,270 @@ print(paste("All participant data saved to:", output_file))
 
 ```
 
+
+```{r}
+library(R.matlab)
+library(dplyr)
+library(writexl)
+library(here)
+
+# Define the file paths relative to the project root using `here()`
+block1_path <- here("data", "Record_S241_ID_sn1_b1.mat")
+block2_path <- here("data", "Record_S241_ID_sn1_b2.mat")
+block3_path <- here("data", "Record_S241_ID_sn1_b3.mat")
+
+# Function to extract and combine data from a .mat file
+extract_data <- function(file_path) {
+  data <- readMat(file_path)
+  new_data <- data.frame(
+    block = data$Datastruct$block,
+    lag = data$Datastruct$Lag,
+    T2T1Corr = data$Datastruct$T2T1Corr,
+    T1Corr = data$Datastruct$T1Corr,
+    T2Corr = data$Datastruct$T2Corr,
+    T2KeyPressed = data$Datastruct$T2KeyPressed,
+    T1KeyPressed = data$Datastruct$T1KeyPressed,
+    T2 = data$Datastruct$T2,
+    T1 = data$Datastruct$T1
+  )
+  return(new_data)
+}
+
+# Read data from 3 blocks
+block1_data <- extract_data(block1_path)
+block2_data <- extract_data(block2_path)
+block3_data <- extract_data(block3_path)
+
+# Combine all blocks into one data frame
+all_data <- bind_rows(block1_data, block2_data, block3_data)
+
+# Write the combined data to an Excel file
+write_xlsx(all_data, here("output", "subject_241_all_blocks.xlsx"))
+
+```
+#trying to write a function to automate this process
+```{r}
+library(R.matlab)
+library(dplyr)
+library(writexl)
+library(here)
+
+# this function is for extracting data from a .mat file
+extract_data <- function(participant_id, block_num) {
+  # I use "here" to construct the file path dynamically
+  file_path <- here("data", paste0("Record_S", participant_id, "_ID_sn1_b", block_num, ".mat"))
+  
+  # just to make sure the file doesn't exist already
+  if (!file.exists(file_path)) {
+    warning(paste("File not found:", file_path))
+    return(NULL)
+  }
+  
+ 
+  data <- readMat(file_path)
+  
+  # a data frame for extracted values, adding participant and block info
+  new_data <- data.frame(
+    participant = participant_id,
+    block = block_num,
+    lag = data$Datastruct$Lag,
+    T2T1Corr = data$Datastruct$T2T1Corr,
+    T1Corr = data$Datastruct$T1Corr,
+    T2Corr = data$Datastruct$T2Corr,
+    T2KeyPressed = data$Datastruct$T2KeyPressed,
+    T1KeyPressed = data$Datastruct$T1KeyPressed,
+    T2 = data$Datastruct$T2,
+    T1 = data$Datastruct$T1
+  )
+  
+  return(new_data)
+}
+
+# another function to process all participants and their blocks
+process_all_participants <- function(participant_ids, num_blocks) {
+  all_data <- list()  # I Use a list here to store data frames for efficiency
+
+  # Loopping through each participant
+  for (participant in participant_ids) {
+    
+    # Loopping through each block
+    for (block in 1:num_blocks) {
+    
+      block_data <- extract_data(participant, block)
+      
+      if (!is.null(block_data)) {
+        all_data <- append(all_data, list(block_data))
+      }
+    }
+  }
+  
+  # into a single data frame
+  final_data <- bind_rows(all_data)
+  
+  return(final_data)
+}
+
+# participant IDs
+participant_ids <- 1:10
+num_blocks <- 3  # Each participant has 3 blocks
+
+
+final_data <- process_all_participants(participant_ids, num_blocks)
+
+# I learbed to use "here" instead of file path
+output_path <- here("output", "all_participants_data.xlsx")
+write_xlsx(final_data, output_path)
+
+head(final_data)
+
+```
+```{r}
+library(R.matlab)
+library(dplyr)
+library(writexl)
+library(here)
+
+# Define test file paths (since they are in a different directory when uploaded)
+file_paths <- list(
+  here("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b1.mat"),
+  here("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b2.mat"),
+  here("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b3.mat")
+)
+
+# Function to extract data from a .mat file
+extract_data <- function(file_path, participant_id, block_num) {
+  # Load the .mat file
+  data <- readMat(file_path)
+  
+  # Extract required data fields
+  new_data <- data.frame(
+    participant = participant_id,
+    block = block_num,
+    lag = data$Datastruct$Lag,
+    T2T1Corr = data$Datastruct$T2T1Corr,
+    T1Corr = data$Datastruct$T1Corr,
+    T2Corr = data$Datastruct$T2Corr,
+    T2KeyPressed = data$Datastruct$T2KeyPressed,
+    T1KeyPressed = data$Datastruct$T1KeyPressed,
+    T2 = data$Datastruct$T2,
+    T1 = data$Datastruct$T1
+  )
+  
+  return(new_data)
+}
+
+# Loop through all 3 blocks and extract data
+all_data <- list()
+
+for (i in seq_along(file_paths)) {
+  # Extract block data
+  block_data <- extract_data(file_paths[[i]], participant_id = 20, block_num = i)
+  
+  # Append to list
+  all_data <- append(all_data, list(block_data))
+}
+
+# Combine into a single data frame
+final_data <- bind_rows(all_data)
+
+# Save to Excel for verification
+write_xlsx(final_data, here("/mnt/data/participant_20_all_blocks.xlsx"))
+
+# Display first few rows
+head(final_data)
+
+```
+
+```{r}
+
+library(R.matlab)
+library(dplyr)
+library(writexl)
+
+extract_data <- function(file_path, participant_id, block_num) {
+  if (!file.exists(file_path)) {
+    warning(paste("File not found:", file_path))
+    return(NULL)
+  }
+
+
+  data <- readMat('/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b1.mat')
+
+  
+  if (!"Datastruct" %in% names(data)) {
+    warning(paste("Datastruct missing in:", file_path))
+    return(NULL)
+  }
+
+  
+  extract_field <- function(field) {
+    if (!is.null(data$Datastruct[[field]]) && length(data$Datastruct[[field]]) > 0) {
+      return(data$Datastruct[[field]])
+    } else {
+      return(NA)  
+    }
+  }
+
+  
+  block <- extract_field("block")
+  lag <- extract_field("Lag")
+  T2T1Corr <- extract_field("T2T1Corr")
+  T1Corr <- extract_field("T1Corr")
+  T2Corr <- extract_field("T2Corr")
+  T2KeyPressed <- extract_field("T2KeyPressed")
+  T1KeyPressed <- extract_field("T1KeyPressed")
+  T2 <- extract_field("T2")
+  T1 <- extract_field("T1")
+
+
+  max_length <- max(length(block), length(lag), length(T2T1Corr), length(T1Corr), 
+                    length(T2Corr), length(T2KeyPressed), length(T1KeyPressed), 
+                    length(T2), length(T1))
+
+  if (max_length == 0) {
+    warning(paste("No data in:", file_path))
+    return(NULL)
+  }
+
+
+  new_data <- data.frame(
+    participant = rep(participant_id, max_length),
+    block = rep(block, max_length),
+    lag = rep(lag, max_length),
+    T2T1Corr = rep(T2T1Corr, max_length),
+    T1Corr = rep(T1Corr, max_length),
+    T2Corr = rep(T2Corr, max_length),
+    T2KeyPressed = rep(T2KeyPressed, max_length),
+    T1KeyPressed = rep(T1KeyPressed, max_length),
+    T2 = rep(T2, max_length),
+    T1 = rep(T1, max_length)
+  )
+
+  return(new_data)
+}
+
+participant_id <- 1
+
+file_paths <- list(
+  "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b1.mat",
+  "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b2.mat",
+  "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b3.mat"
+)
+
+all_data <- list()
+for (i in seq_along(file_paths)) {
+  block_data <- extract_data(file_paths[[i]], participant_id, block_num = i)
+  if (!is.null(block_data)) {
+    all_data <- append(all_data, list(block_data))
+  }
+}
+
+final_data <- bind_rows(all_data)
+
+write_xlsx(final_data, "/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/participant_1a_all_blocks.xlsx")
+
+# View first few rows
+head(final_data)
+
+```
+
