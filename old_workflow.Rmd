@@ -1,0 +1,474 @@
+---
+title: "AB_Analysis"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(broom)
+
+
+data_1 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/ANTI/combined_16subject_Anti_data.xlsx")
+data_1$T1Corr <- as.factor(data_1$T1Corr)
+data_1$lag <- as.factor(data_1$lag)
+clean_data_1 <- data_1 %>%
+  filter(!is.na(T2Corr) & !is.nan(T1Corr) & T1Corr != Inf & T2Corr != -Inf)
+
+data_2 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/IN/combined_16subject_IN_data.xlsx")
+data_2$T1Corr <- as.factor(data_2$T1Corr)
+data_2$lag <- as.factor(data_2$lag)
+clean_data_2 <- data_2 %>%
+  filter(!is.na(T1Corr) & !is.nan(T1Corr) & T1Corr != Inf & T1Corr != -Inf)
+
+logistic_model_1 <- glm(T1Corr ~ lag, data = clean_data_1, family = binomial)
+preds_1 <- predict(logistic_model_1, newdata = clean_data_1, type = "response", se.fit = TRUE)
+clean_data_1 <- clean_data_1 %>%
+  mutate(predicted_prob = preds_1$fit,
+         se_fit = preds_1$se.fit,
+         lower_ci = preds_1$fit - qnorm(0.975) * preds_1$se.fit,
+         upper_ci = preds_1$fit + qnorm(0.975) * preds_1$se.fit,
+         condition = "anti")
+
+logistic_model_2 <- glm(T1Corr ~ lag, data = clean_data_2, family = binomial)
+preds_2 <- predict(logistic_model_2, newdata = clean_data_2, type = "response", se.fit = TRUE)
+clean_data_2 <- clean_data_2 %>%
+  mutate(predicted_prob = preds_2$fit,
+         se_fit = preds_2$se.fit,
+         lower_ci = preds_2$fit - qnorm(0.975) * preds_2$se.fit,
+         upper_ci = preds_2$fit + qnorm(0.975) * preds_2$se.fit,
+         condition = "in")
+
+combined_data <- bind_rows(clean_data_1, clean_data_2)
+
+
+combined_plot <- ggplot(combined_data, aes(x = lag, y = predicted_prob, color = condition, group = condition)) +
+  geom_line(size = 1) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.1) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0.2, 1)) +
+  labs(x = "Lag", y = "Percent correct",
+       title = "Comparison of T1 Percent correct for in-phase and anti-phase Conditions",
+       color = "Condition") +
+  theme_minimal()
+
+
+print(combined_plot)
+```
+
+
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(broom)
+
+
+data_1 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/234/combined_subject_234_data.xlsx")
+data_1$T2T1Corr <- as.factor(data_1$T2T1Corr)
+data_1$lag <- as.factor(data_1$lag)
+clean_data_1 <- data_1 %>%
+  filter(!is.na(T2T1Corr) & !is.nan(T2T1Corr) & T2T1Corr != Inf & T2T1Corr != -Inf)
+
+data_2 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/235/combined_subject_235_data.xlsx")
+data_2$T2T1Corr <- as.factor(data_2$T2T1Corr)
+data_2$lag <- as.factor(data_2$lag)
+clean_data_2 <- data_2 %>%
+  filter(!is.na(T2T1Corr) & !is.nan(T2T1Corr) & T2T1Corr != Inf & T2T1Corr != -Inf)
+
+logistic_model_1 <- glm(T2T1Corr ~ lag, data = clean_data_1, family = binomial)
+preds_1 <- predict(logistic_model_1, newdata = clean_data_1, type = "response", se.fit = TRUE)
+clean_data_1 <- clean_data_1 %>%
+  mutate(predicted_prob = preds_1$fit,
+         se_fit = preds_1$se.fit,
+         lower_ci = preds_1$fit - qnorm(0.975) * preds_1$se.fit,
+         upper_ci = preds_1$fit + qnorm(0.975) * preds_1$se.fit,
+         condition = "Sham")
+
+logistic_model_2 <- glm(T2T1Corr ~ lag, data = clean_data_2, family = binomial)
+preds_2 <- predict(logistic_model_2, newdata = clean_data_2, type = "response", se.fit = TRUE)
+clean_data_2 <- clean_data_2 %>%
+  mutate(predicted_prob = preds_2$fit,
+         se_fit = preds_2$se.fit,
+         lower_ci = preds_2$fit - qnorm(0.975) * preds_2$se.fit,
+         upper_ci = preds_2$fit + qnorm(0.975) * preds_2$se.fit,
+         condition = "Active")
+
+combined_data <- bind_rows(clean_data_1, clean_data_2)
+
+
+combined_plot <- ggplot(combined_data, aes(x = lag, y = predicted_prob, color = condition, group = condition)) +
+  geom_line(size = 1) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.1) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0.25, 1)) +
+  labs(x = "Lag", y = "Percent correct",
+      
+       color = "Condition") +
+  theme_minimal()
+
+
+print(combined_plot)
+ 
+```
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(broom)
+
+data_1 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/ANTI/combined_16subject_Anti_data.xlsx")
+data_1$T2T1Corr <- as.factor(data_1$T2T1Corr)
+data_1$lag <- as.factor(data_1$lag)  # Treat "T2 Lags" as an ordinal variable
+clean_data_1 <- data_1 %>%
+  filter(!is.na(T2T1Corr) & !is.nan(T2T1Corr) & T2T1Corr != Inf & T2T1Corr != -Inf)
+
+data_2 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/IN/combined_16subject_IN_data.xlsx")
+data_2$T2T1Corr <- as.factor(data_2$T2T1Corr)
+data_2$lag <- as.factor(data_2$lag)  # Treat "T2 Lags" as an ordinal variable
+clean_data_2 <- data_2 %>%
+  filter(!is.na(T2T1Corr) & !is.nan(T2T1Corr) & T2T1Corr != Inf & T2T1Corr != -Inf)
+
+logistic_model_1 <- glm(T2T1Corr ~ lag, data = clean_data_1, family = binomial)
+preds_1 <- predict(logistic_model_1, newdata = clean_data_1, type = "response", se.fit = TRUE)
+clean_data_1 <- clean_data_1 %>%
+  mutate(predicted_prob = preds_1$fit,
+         se_fit = preds_1$se.fit,
+         lower_ci = preds_1$fit - qnorm(0.975) * preds_1$se.fit,
+         upper_ci = preds_1$fit + qnorm(0.975) * preds_1$se.fit,
+         condition = "Sham")
+
+logistic_model_2 <- glm(T2T1Corr ~ lag, data = clean_data_2, family = binomial)
+preds_2 <- predict(logistic_model_2, newdata = clean_data_2, type = "response", se.fit = TRUE)
+clean_data_2 <- clean_data_2 %>%
+  mutate(predicted_prob = preds_2$fit,
+         se_fit = preds_2$se.fit,
+         lower_ci = preds_2$fit - qnorm(0.975) * preds_2$se.fit,
+         upper_ci = preds_2$fit + qnorm(0.975) * preds_2$se.fit,
+         condition = "Active")
+
+combined_data <- bind_rows(clean_data_1, clean_data_2)
+
+combined_plot <- ggplot(combined_data, aes(x = lag, y = predicted_prob, color = condition, group = condition)) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.1) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0.4, 0.95)) +
+  scale_x_discrete(expand = c(0.1, 0.1)) +  # Ensure X-axis remains visible as an ordinal variable
+  labs(
+    x = "T2 Lags",  # Change X-axis title
+    y = "T2|T1 Accuracy",  # Show Y-axis title clearly
+    
+    color = "Condition"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  
+    legend.position = c(0.1, 0.9),  
+    legend.background = element_rect(fill = "white", color = "black"), 
+    axis.line = element_line(color = "black"),  
+    axis.ticks = element_line(color = "black"), 
+    axis.text = element_text(size = 14, color = "black"),  
+    axis.title = element_text(size = 16, face = "bold")  
+  )
+
+print(combined_plot)
+
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+
+data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_IN_Data.csv")
+
+data$Block <- as.factor(data$Block)
+data$Subject <- as.factor(data$Subject)
+data$lag <- as.factor(data$lag)  # Treating lag as a categorical variable
+
+summary_data <- data %>%
+  group_by(Block, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr), .groups = "drop")
+
+ggplot(summary_data, aes(x = Block, y = Mean_T2T1Corr, group = lag, color = lag)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(title = "Performance on T2T1Corr Across Blocks",
+       x = "Block",
+       y = "Mean T2T1Corr",
+       color = "Lag") +
+  theme_minimal()
+
+model <- glmer(T2T1Corr ~ Block * lag + (1 | Subject), 
+               data = data, 
+               family = binomial, 
+               control = glmerControl(optimizer = "bobyqa"))
+
+summary(model)
+
+```
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+
+data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_Data.csv")
+
+data$Block <- as.factor(data$Block)
+data$Subject <- as.factor(data$Subject)
+data$lag <- as.factor(data$lag)  # Treating lag as a categorical variable
+
+summary_data <- data %>%
+  group_by(Block, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr), .groups = "drop")
+
+ggplot(summary_data, aes(x = Block, y = Mean_T2T1Corr, group = lag, color = lag)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(title = "Performance on T2T1Corr Across Blocks",
+       x = "Block",
+       y = "Mean T2T1Corr",
+       color = "Lag") +
+  theme_minimal()
+
+model <- glmer(T2T1Corr ~ Block * lag + (1 | Subject), 
+               data = data, 
+               family = binomial, 
+               control = glmerControl(optimizer = "bobyqa"))
+
+summary(model)
+```
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+
+in_phase_data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_IN_Data.csv")
+anti_phase_data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_Data.csv")
+
+in_phase_data$Condition <- "In-Phase"
+anti_phase_data$Condition <- "Anti-Phase"
+
+combined_data <- bind_rows(in_phase_data, anti_phase_data)
+
+combined_data$Block <- as.factor(combined_data$Block)
+combined_data$Subject <- as.factor(combined_data$Subject)
+combined_data$lag <- as.factor(combined_data$lag)
+combined_data$Condition <- as.factor(combined_data$Condition)
+
+AB_data <- combined_data %>%
+  filter(lag %in% c(2, 7)) %>%
+  group_by(Subject, Condition, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr), .groups = "drop") %>%
+  pivot_wider(names_from = lag, values_from = Mean_T2T1Corr, names_prefix = "Lag") %>%
+  mutate(AB_Magnitude = Lag2 - Lag7)  # Compute Attentional Blink magnitude
+
+ggplot(AB_data, aes(x = Condition, y = AB_Magnitude, fill = Condition)) +
+  geom_boxplot(alpha = 0.6) +
+  geom_jitter(width = 0.2, alpha = 0.6) +
+  labs(title = "Attentional Blink Magnitude Across Conditions",
+       x = "Condition",
+       y = "AB Magnitude (Lag 2 - Lag 7)") +
+  theme_minimal()
+
+AB_model <- lmer(AB_Magnitude ~ Condition + (1 | Subject), data = AB_data)
+
+summary(AB_model)
+
+```
+
+```{r}
+library(dplyr)
+
+anti_phase_data <- read.csv("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/ANTI/combined_16subject_Anti_data.xlsx")
+in_phase_data <- read.csv("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/IN/combined_16subject_IN_data.xlsx")
+
+
+in_phase_data$Condition <- "In-Phase"
+anti_phase_data$Condition <- "Anti-Phase"
+
+combined_data <- bind_rows(in_phase_data, anti_phase_data)
+
+combined_data$lag <- as.factor(combined_data$lag)
+
+# Computing AB Magnitude (Lag2 - Lag7) for each subject in each condition
+AB_data <- combined_data %>%
+  filter(lag %in% c(2, 7)) %>%
+  group_by(Subject, Condition, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr), .groups = "drop") %>%
+  pivot_wider(names_from = lag, values_from = Mean_T2T1Corr, names_prefix = "Lag") %>%
+  mutate(AB_Magnitude = Lag2 - Lag7)  # Compute Attentional Blink magnitude
+
+# Reshaping data for paired t-test
+AB_wide <- AB_data %>%
+  select(Subject, Condition, AB_Magnitude) %>%
+  pivot_wider(names_from = Condition, values_from = AB_Magnitude)
+
+t_test_result <- t.test(AB_wide$`In-Phase`, AB_wide$`Anti-Phase`, paired = TRUE)
+
+print(t_test_result)
+
+```
+```{r}
+
+library(dplyr)
+library(ggplot2)
+
+ab_data <- ab_data %>%
+  mutate(AB_Magnitude_InPhase = T2T1_InPhase_Long - T2T1_InPhase_Short,
+         AB_Magnitude_AntiPhase = T2T1_AntiPhase_Long - T2T1_AntiPhase_Short)
+
+cor_test <- cor.test(ab_data$AB_Magnitude_InPhase, ab_data$AB_Magnitude_AntiPhase, method = "pearson")
+print(cor_test)
+
+cor_test_spearman <- cor.test(ab_data$AB_Magnitude_InPhase, ab_data$AB_Magnitude_AntiPhase, method = "spearman")
+print(cor_test_spearman)
+
+ggplot(ab_data, aes(x = AB_Magnitude_InPhase, y = AB_Magnitude_AntiPhase)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Correlation Between In-Phase and Anti-Phase AB Magnitude Changes",
+       x = "In-Phase AB Magnitude Change",
+       y = "Anti-Phase AB Magnitude Change") +
+  theme_minimal()
+
+```
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+anti_phase_data <- read.csv("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/ANTI/combined_16subject_Anti_data.xlsx")
+in_phase_data <- read.csv("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/IN/combined_16subject_IN_data.xlsx")
+
+in_phase_data$Condition <- "In-Phase"
+anti_phase_data$Condition <- "Anti-Phase"
+
+combined_data <- bind_rows(in_phase_data, anti_phase_data)
+
+combined_data$lag <- as.factor(combined_data$lag)
+
+AB_data <- combined_data %>%
+  filter(lag %in% c(2, 7)) %>%
+  group_by(Subject, Condition, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr), .groups = "drop") %>%
+  pivot_wider(names_from = lag, values_from = Mean_T2T1Corr, names_prefix = "Lag") %>%
+  mutate(AB_Magnitude = Lag2 - Lag7)  # Compute Attentional Blink magnitude
+
+AB_wide <- AB_data %>%
+  select(Subject, Condition, AB_Magnitude) %>%
+  pivot_wider(names_from = Condition, values_from = AB_Magnitude)
+
+colnames(AB_wide) <- c("Subject", "AB_InPhase", "AB_AntiPhase")
+
+cor_test <- cor.test(AB_wide$AB_InPhase, AB_wide$AB_AntiPhase, method = "pearson")
+print(cor_test)
+
+cor_test_spearman <- cor.test(AB_wide$AB_InPhase, AB_wide$AB_AntiPhase, method = "spearman")
+print(cor_test_spearman)
+
+ggplot(AB_wide, aes(x = AB_InPhase, y = AB_AntiPhase)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Correlation Between In-Phase and Anti-Phase AB Magnitude Changes",
+       x = "In-Phase AB Magnitude Change",
+       y = "Anti-Phase AB Magnitude Change") +
+  theme_minimal()
+
+```
+```{r}
+library(readxl)  
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+anti_phase_data <- read_excel("/Users/saherehvarastegan/Downloads/combined_16subject_Anti_data_with_subject.xlsx")
+in_phase_data <- read_excel("/Users/saherehvarastegan/Downloads/combined_16subject_IN_data_with_subject.xlsx")
+
+
+in_phase_data$Condition <- "In-Phase"
+anti_phase_data$Condition <- "Anti-Phase"
+
+
+combined_data <- bind_rows(in_phase_data, anti_phase_data)
+
+
+combined_data$lag <- as.numeric(as.character(combined_data$lag))
+
+
+print(unique(combined_data$lag))
+
+AB_data <- combined_data %>%
+  filter(lag %in% c(2, 7)) %>%
+  group_by(Subject, Condition, lag) %>%
+  summarise(Mean_T2T1Corr = mean(T2T1Corr, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = lag, values_from = Mean_T2T1Corr, names_prefix = "Lag") %>%
+  mutate(AB_Magnitude = Lag2 - Lag7)  # Compute Attentional Blink magnitude
+
+if (nrow(AB_data) == 0) {
+  stop("No data available for Lag 2 and Lag 7. Check your dataset!")
+}
+
+
+AB_wide <- AB_data %>%
+  select(Subject, Condition, AB_Magnitude) %>%
+  pivot_wider(names_from = Condition, values_from = AB_Magnitude)
+
+
+colnames(AB_wide) <- c("Subject", "AB_InPhase", "AB_AntiPhase")
+
+print(head(AB_wide))
+
+cor_test <- cor.test(AB_wide$AB_InPhase, AB_wide$AB_AntiPhase, method = "pearson")
+print(cor_test)
+
+
+cor_test_spearman <- cor.test(AB_wide$AB_InPhase, AB_wide$AB_AntiPhase, method = "spearman")
+print(cor_test_spearman)
+
+
+ggplot(AB_wide, aes(x = AB_InPhase, y = AB_AntiPhase)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Correlation Between In-Phase and Anti-Phase AB Magnitude Changes",
+       x = "In-Phase AB Magnitude Change",
+       y = "Anti-Phase AB Magnitude Change") +
+  theme_minimal()
+
+```
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+correlation_test <- cor.test(AB_wide$AB_InPhase, AB_wide$AB_AntiPhase, method = "pearson")
+
+print(correlation_test)
+
+library(ggplot2)
+
+ggplot(AB_wide, aes(x = In-Phase, y = Anti-Phase)) +
+  geom_point(color = "black", size = 3) +  # Scatter plot points
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +  # Regression line
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Zero line for Anti-Phase
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +  # Zero line for In-Phase
+  labs(
+    title = "Correlation Between In-Phase and Anti-Phase AB Magnitude Changes",
+    x = "In-Phase AB Magnitude Change",
+    y = "Anti-Phase AB Magnitude Change"
+  ) +
+  theme_minimal()
+
+```
+
