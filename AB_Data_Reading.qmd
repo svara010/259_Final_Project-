@@ -216,7 +216,6 @@ library(dplyr)
 library(writexl)
 library(here)
 
-# Define test file paths (since they are in a different directory when uploaded)
 file_paths <- list(
   here("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b1.mat"),
   here("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Exp1_data/active_stim/1a/Record_S20_ID_sn1_b2.mat"),
@@ -227,8 +226,7 @@ file_paths <- list(
 extract_data <- function(file_path, participant_id, block_num) {
   # Load the .mat file
   data <- readMat(file_path)
-  
-  # Extract required data fields
+
   new_data <- data.frame(
     participant = participant_id,
     block = block_num,
@@ -245,24 +243,19 @@ extract_data <- function(file_path, participant_id, block_num) {
   return(new_data)
 }
 
-# Loop through all 3 blocks and extract data
 all_data <- list()
 
 for (i in seq_along(file_paths)) {
   # Extract block data
   block_data <- extract_data(file_paths[[i]], participant_id = 20, block_num = i)
   
-  # Append to list
   all_data <- append(all_data, list(block_data))
 }
 
-# Combine into a single data frame
 final_data <- bind_rows(all_data)
 
-# Save to Excel for verification
 write_xlsx(final_data, here("/mnt/data/participant_20_all_blocks.xlsx"))
 
-# Display first few rows
 head(final_data)
 
 ```
