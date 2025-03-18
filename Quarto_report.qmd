@@ -122,17 +122,27 @@ pairs(emmeans_results)
 ## Explanation of Optimizations
 
 -   **Automatic Saving**: The function now automatically saves `combined_all_data.xlsx` for later use.
+
 -   **Using `here()`**: Replaced static file paths with `here()` to make the workflow dynamic and portable.
+
 -   **Data Type Consistency**: I used `mutate()` to enforce that `T2T1Corr` is numeric and `lag` is a factor with specified levels.
+
 -   **Efficient Summarization**: Tidyverse functions allowed fast and clear aggregation of trial-level data into subject-level accuracy.
+
 -   **Appropriate Statistical Analysis**: Performed repeated-measures ANOVA to compare overall accuracy across lag conditions.
+
+-   Further I did post-hoc pair wise analysis\
 
 ## Files in GitHub
 
 -   Raw data files
+
 -   Combined subject files
+
 -   Combined dataset CSV
+
 -   Data analysis scripts
+
 -   This Quarto report
 
 ------------------------------------------------------------------------
