@@ -36,5 +36,3 @@ combined_data <- combine_subject_blocks(here("subjects_blocks_excel_files"))
 
 
 ```
-
-
