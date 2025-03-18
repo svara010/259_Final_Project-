@@ -66,13 +66,13 @@ library(ggplot2)
 library(broom)
 
 
-data_1 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/234/combined_subject_234_data.xlsx")
+data_1 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/ANTI/combined_16subject_Anti_data.xlsx")
 data_1$T2T1Corr <- as.factor(data_1$T2T1Corr)
 data_1$lag <- as.factor(data_1$lag)
 clean_data_1 <- data_1 %>%
   filter(!is.na(T2T1Corr) & !is.nan(T2T1Corr) & T2T1Corr != Inf & T2T1Corr != -Inf)
 
-data_2 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/235/combined_subject_235_data.xlsx")
+data_2 <- read_excel("/Users/saherehvarastegan/Library/CloudStorage/GoogleDrive-svara010@ucr.edu/My Drive/UCR/Data/EXP_2/IN/combined_20subject_IN_data.xlsx")
 data_2$T2T1Corr <- as.factor(data_2$T2T1Corr)
 data_2$lag <- as.factor(data_2$lag)
 clean_data_2 <- data_2 %>%
@@ -103,7 +103,7 @@ combined_plot <- ggplot(combined_data, aes(x = lag, y = predicted_prob, color = 
   geom_line(size = 1) +
   geom_point() +
   geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.1) +
-  scale_y_continuous(labels = scales::percent_format(), limits = c(0.25, 1)) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0.3, 0.8)) +
   labs(x = "Lag", y = "Percent correct",
       
        color = "Condition") +
@@ -113,6 +113,54 @@ combined_plot <- ggplot(combined_data, aes(x = lag, y = predicted_prob, color = 
 print(combined_plot)
  
 ```
+```{r}
+# Load necessary libraries
+library(readxl)
+library(dplyr)
+library(afex)  # for repeated measures ANOVA
+library(ggplot2)
+
+# Load data
+data_1 <- read.csv("/Users/saherehvarastegan/Downloads/Updated_ANTI_Data_with_Subject_and_Block_Columns.csv")
+data_2 <- read.csv("/Users/saherehvarastegan/Downloads/Updated_Data_with_Subject_and_Block_Columns.csv")
+
+# Add condition labels
+data_1$Condition <- "Anti-Phase"
+data_2$Condition <- "In-Phase"
+
+# Merge datasets
+combined_data <- bind_rows(data_1, data_2)
+
+# Convert variables to factors
+combined_data <- combined_data %>%
+  mutate(
+    Subject = as.factor(Subject),
+    Condition = as.factor(Condition),
+    Lag = as.factor(lag),  # If you also want to analyze lag effects
+    T1Corr = as.numeric(T1Corr)  # Ensure it's numeric for ANOVA
+  )
+
+# Run Repeated Measures ANOVA
+anova_results <- aov_ez(
+  id = "Subject",  # Subject is the repeated-measures factor
+  dv = "T1Corr",  # Dependent variable
+  within = c("Condition", "Lag"),  # Within-subject factors
+  data = combined_data
+)
+
+
+
+
+
+
+ggplot(combined_data, aes(x = Lag, y = T1Corr, color = Condition, group = Condition)) +
+  stat_summary(fun = mean, geom = "line", size = 1) +
+  stat_summary(fun = mean, geom = "point") +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width = 0.1) +
+  labs(x = "Lag", y = "T1 Performance", color = "Condition") +
+  theme_minimal()
+```
+
 ```{r}
 library(readxl)
 library(dplyr)
@@ -185,7 +233,7 @@ library(ggplot2)
 library(lme4)
 library(lmerTest)
 
-data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_IN_Data.csv")
+data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_ANTI_Data_with_Subject_and_Block_Columns.csv")
 
 data$Block <- as.factor(data$Block)
 data$Subject <- as.factor(data$Subject)
@@ -219,7 +267,7 @@ library(ggplot2)
 library(lme4)
 library(lmerTest)
 
-data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_Data.csv")
+data <- read.csv("/Users/saherehvarastegan/Downloads/Updated_Data_with_Subject_and_Block_Columns.csv")
 
 data$Block <- as.factor(data$Block)
 data$Subject <- as.factor(data$Subject)
