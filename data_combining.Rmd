@@ -1,0 +1,38 @@
+---
+title: "AB_data_combining"
+output: html_document
+date: "2025-03-18"
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(stringr)
+
+combine_subject_blocks <- function(data_folder) {
+  all_files <- list.files(path = data_folder, pattern = "*.xlsx$", full.names = TRUE)
+  
+  subject_ids <- unique(str_extract(all_files, "subject_\\d+"))
+  
+  combine_blocks_for_subject <- function(Subject_ID) {
+    subject_files <- all_files[str_detect(all_files, Subject_ID)]
+    
+    combined_subject_data <- map_dfr(subject_files, read_excel) %>%
+      mutate(Subject_ID = Subject_ID)
+    
+    return(combined_subject_data)
+  }
+  
+  all_subject_data <- map_dfr(subject_ids, combine_blocks_for_subject)
+  return(all_subject_data)
+}
+
+```
+```{r}
+library(here)
+combined_data <- combine_subject_blocks(here("subjects_blocks_excel_files"))
+
+
+```
+
+
