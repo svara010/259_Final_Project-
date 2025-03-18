@@ -1,0 +1,46 @@
+---
+title: "AB_data_analysis"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(ez)
+library(ggplot2)
+library(emmeans)
+library(here)
+
+combined_data <- read_xlsx(here("output_folder", "combined_all_data.xlsx")) %>%
+  mutate(
+    T2T1Corr = as.numeric(T2T1Corr),
+    lag = factor(lag, levels = c("1", "3", "7")),
+    Subject_ID = as.factor(Subject_ID)
+  )
+
+subject_means <- combined_data %>%
+  group_by(Subject_ID, lag) %>%
+  summarise(mean_accuracy = mean(T2T1Corr), .groups = "drop")
+
+ggplot(subject_means, aes(x = lag, y = mean_accuracy)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(title = "Mean Accuracy (T2|T1) by Lag", x = "Lag", y = "Mean Accuracy") +
+  theme_minimal()
+
+anova_results <- ezANOVA(
+  data = subject_means,
+  dv = mean_accuracy,
+  wid = Subject_ID,
+  within = .(lag),
+  detailed = TRUE,
+  type = 3
+)
+print(anova_results)
+
+model <- aov(mean_accuracy ~ lag + Error(Subject_ID/lag), data = subject_means)
+emmeans_results <- emmeans(model, ~ lag)
+pairs(emmeans_results)
+```
+

@@ -1,0 +1,138 @@
+---
+title: "Final Project Report: Workflow Improvement and Data Analysis"
+author: "Sahereh Varastegan"
+date: "March 17, 2025"
+format: html
+editor: visual
+---
+
+## Project Overview
+
+The goal of this final project was to improve the efficiency, fidelity, and reproducibility of my existing data workflow. My dataset consisted of multiple `.xlsx` files, with each participant has three separate block files. The objective was to combine each participant's blocks into one file and then combine all participants' data for analysis.
+
+## Initial Challenges
+
+Initially, the data were stored in separate Excel files (three blocks per subject). Manual combination would be really tedious and error-prone. My workflow lacked automation and diagnostics to ensure everything is complete and has accuracy.
+
+## Improvements Made
+
+### 1. Automation and Diagnostics Function
+
+I wrote a custom R function to automatically: - detect all subject block files in a folder. - Combine each subject's three blocks. - add subject IDs. - save combined subject data. - merge all participant data for the analysis and automatically save the combined dataset.
+
+```{r}
+library(readxl)
+library(writexl)
+library(dplyr)
+library(here)
+
+combine_blocks_per_subject_diagnostic <- function(blocks_folder, output_folder) {
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder)
+  }
+
+  block_files <- list.files(blocks_folder, pattern = "subject_.*_block_.*\\.xlsx$", full.names = TRUE)
+  cat("Number of block files found:", length(block_files), "\n")
+
+  subject_ids <- unique(gsub(".*subject_([0-9]+)_block_.*", "\\1", basename(block_files)))
+  cat("Subject IDs found:", paste(subject_ids, collapse = ", "), "\n")
+
+  all_participants_data <- list()
+
+  for (subject_id in subject_ids) {
+    subject_block_files <- block_files[grepl(paste0("subject_", subject_id, "_block_"), block_files)]
+    subject_data <- do.call(rbind, lapply(subject_block_files, read_xlsx)) %>%
+      mutate(
+        Subject_ID = subject_id,
+        T2T1Corr = as.numeric(T2T1Corr),
+        lag = factor(lag, levels = c("1", "3", "7"))
+      )
+
+    write_xlsx(subject_data, file.path(output_folder, paste0("subject_", subject_id, ".xlsx")))
+    all_participants_data[[subject_id]] <- subject_data
+  }
+
+  combined_all_data <- bind_rows(all_participants_data)
+  writexl::write_xlsx(combined_all_data, file.path(output_folder, "combined_all_data.xlsx"))
+
+  return(combined_all_data)
+}
+```
+
+### 2. Applying the Function Using `here()` instead of using file path everytime
+
+```{r}
+combined_data <- combine_blocks_per_subject_diagnostic(
+  here("subjects_blocks_excel_files"),
+  here("output_folder")
+)
+```
+
+### 3. Verification and Error Checking
+
+```{r}
+combined_data <- readxl::read_xlsx(here("output_folder", "combined_all_data.xlsx"))
+nrow(combined_data)  # Expected: 19 subjects * 3 blocks * 63 rows = 3591
+combined_data %>% count(Subject_ID)
+```
+
+## Optimizations in Data Processing
+
+I optimized my code in several ways:
+
+-   I used `mutate()` from the tidyverse to ensure `T2T1Corr` is numeric and `lag` is treated as a factor with correct levels. This prevents errors in analysis and makes plots and models more interpretable.
+-   I incorporated the `here()` package for dynamic file paths, which improves reproducibility and portability.
+-   I aggregated my data using `group_by()` and `summarise()` to calculate subject-level means, providing clean input for ANOVA.
+-   I structured the analysis with clear pipelines that can be reused in future projects.
+
+## Exploratory Data Analysis and Repeated-Measures ANOVA
+
+```{r}
+library(tidyverse)
+library(ez)
+library(ggplot2)
+
+subject_means <- combined_data %>%
+  group_by(Subject_ID, lag) %>%
+  summarise(mean_accuracy = mean(T2T1Corr), .groups = "drop")
+
+ggplot(subject_means, aes(x = lag, y = mean_accuracy)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(title = "Mean Accuracy (T2|T1) by Lag", x = "Lag", y = "Mean Accuracy") +
+  theme_minimal()
+
+anova_results <- ezANOVA(
+  data = subject_means,
+  dv = mean_accuracy,
+  wid = Subject_ID,
+  within = .(lag),
+  detailed = TRUE,
+  type = 3
+)
+print(anova_results)
+
+library(emmeans)
+model <- aov(mean_accuracy ~ lag + Error(Subject_ID/lag), data = subject_means)
+emmeans_results <- emmeans(model, ~ lag)
+pairs(emmeans_results)
+```
+
+## Explanation of Optimizations
+
+-   **Automatic Saving**: The function now automatically saves `combined_all_data.xlsx` for later use.
+-   **Using `here()`**: Replaced static file paths with `here()` to make the workflow dynamic and portable.
+-   **Data Type Consistency**: I used `mutate()` to enforce that `T2T1Corr` is numeric and `lag` is a factor with specified levels.
+-   **Efficient Summarization**: Tidyverse functions allowed fast and clear aggregation of trial-level data into subject-level accuracy.
+-   **Appropriate Statistical Analysis**: Performed repeated-measures ANOVA to compare overall accuracy across lag conditions.
+
+## Files in GitHub
+
+-   Raw data files
+-   Combined subject files
+-   Combined dataset CSV
+-   Data analysis scripts
+-   This Quarto report
+
+------------------------------------------------------------------------
